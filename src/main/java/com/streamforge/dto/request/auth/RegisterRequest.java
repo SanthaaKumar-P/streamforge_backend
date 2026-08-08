@@ -2,6 +2,8 @@ package com.streamforge.dto.request.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Getter
@@ -11,23 +13,37 @@ import lombok.*;
 @Builder
 public class RegisterRequest {
 
-    @NotBlank
+    @NotBlank(message = "Full name is required")
+    @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
     private String fullName;
 
-    @NotBlank
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
-    @Email
-    @NotBlank
+    @NotBlank(message = "Email is required")
+    @Email(message = "Enter a valid email address")
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 
+    @Pattern(
+            regexp = "^[0-9]{10}$",
+            message = "Phone number must contain exactly 10 digits"
+    )
     private String phone;
 
+    @Size(
+            max = 50,
+            message = "Employee code cannot exceed 50 characters"
+    )
     private String employeeCode;
 
+    @Size(
+            max = 500,
+            message = "Bio cannot exceed 500 characters"
+    )
     private String bio;
-
 }

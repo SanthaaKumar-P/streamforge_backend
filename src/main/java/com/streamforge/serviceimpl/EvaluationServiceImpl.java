@@ -5,6 +5,7 @@ import com.streamforge.dto.response.EvaluationResponse;
 import com.streamforge.entity.Evaluation;
 import com.streamforge.entity.Show;
 import com.streamforge.entity.User;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.EvaluationMapper;
 import com.streamforge.repository.EvaluationRepository;
 import com.streamforge.repository.ShowRepository;
@@ -19,31 +20,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
 
-
     private final EvaluationRepository evaluationRepository;
-
     private final ShowRepository showRepository;
-
     private final UserRepository userRepository;
-
     private final EvaluationMapper evaluationMapper;
-
 
     @Override
     public EvaluationResponse createEvaluation(EvaluationRequest request) {
 
-
         Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(
-                        () -> new RuntimeException("Show not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: " + request.getShowId()
+                        )
                 );
-
 
         User evaluator = userRepository.findById(request.getEvaluatorId())
-                .orElseThrow(
-                        () -> new RuntimeException("Evaluator not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluator not found with id: "
+                                        + request.getEvaluatorId()
+                        )
                 );
-
 
         Evaluation evaluation = Evaluation.builder()
                 .show(show)
@@ -57,36 +55,37 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .remarks(request.getRemarks())
                 .build();
 
-
         return evaluationMapper.toResponse(
                 evaluationRepository.save(evaluation)
         );
-
     }
-
 
     @Override
     public List<EvaluationResponse> getShowEvaluations(Long showId) {
+
+        if (!showRepository.existsById(showId)) {
+            throw new ResourceNotFoundException(
+                    "Show not found with id: " + showId
+            );
+        }
 
         return evaluationRepository.findByShowShowId(showId)
                 .stream()
                 .map(evaluationMapper::toResponse)
                 .toList();
-
     }
-
 
     @Override
     public EvaluationResponse getEvaluationById(Long evaluationId) {
 
         return evaluationRepository.findById(evaluationId)
                 .map(evaluationMapper::toResponse)
-                .orElseThrow(
-                        () -> new RuntimeException("Evaluation not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluation not found with id: " + evaluationId
+                        )
                 );
-
     }
-
 
     @Override
     public EvaluationResponse updateEvaluation(
@@ -94,34 +93,56 @@ public class EvaluationServiceImpl implements EvaluationService {
             EvaluationRequest request
     ) {
 
-        Evaluation evaluation =
-                evaluationRepository.findById(evaluationId)
-                .orElseThrow(
-                        () -> new RuntimeException("Evaluation not found")
+        Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluation not found with id: " + evaluationId
+                        )
                 );
 
+        evaluation.setOriginalityScore(
+                request.getOriginalityScore()
+        );
 
-        evaluation.setOriginalityScore(request.getOriginalityScore());
-        evaluation.setCreativityScore(request.getCreativityScore());
-        evaluation.setMarketPotentialScore(request.getMarketPotentialScore());
-        evaluation.setFeasibilityScore(request.getFeasibilityScore());
-        evaluation.setOverallScore(request.getOverallScore());
-        evaluation.setDecision(request.getDecision());
-        evaluation.setRemarks(request.getRemarks());
+        evaluation.setCreativityScore(
+                request.getCreativityScore()
+        );
 
+        evaluation.setMarketPotentialScore(
+                request.getMarketPotentialScore()
+        );
+
+        evaluation.setFeasibilityScore(
+                request.getFeasibilityScore()
+        );
+
+        evaluation.setOverallScore(
+                request.getOverallScore()
+        );
+
+        evaluation.setDecision(
+                request.getDecision()
+        );
+
+        evaluation.setRemarks(
+                request.getRemarks()
+        );
 
         return evaluationMapper.toResponse(
                 evaluationRepository.save(evaluation)
         );
-
     }
-
 
     @Override
     public void deleteEvaluation(Long evaluationId) {
 
-        evaluationRepository.deleteById(evaluationId);
+        Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluation not found with id: " + evaluationId
+                        )
+                );
 
+        evaluationRepository.delete(evaluation);
     }
-
 }

@@ -3,6 +3,7 @@ package com.streamforge.serviceimpl;
 import com.streamforge.dto.request.GenreRequest;
 import com.streamforge.dto.response.GenreResponse;
 import com.streamforge.entity.Genre;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.GenreMapper;
 import com.streamforge.repository.GenreRepository;
 import com.streamforge.service.GenreService;
@@ -32,7 +33,11 @@ public class GenreServiceImpl implements GenreService {
     public GenreResponse getGenreById(Long genreId) {
 
         Genre genre = genreRepository.findById(genreId)
-                .orElseThrow(() -> new RuntimeException("Genre not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Genre not found with id: " + genreId
+                        )
+                );
 
         return genreMapper.toResponse(genre);
     }
@@ -53,7 +58,11 @@ public class GenreServiceImpl implements GenreService {
     ) {
 
         Genre genre = genreRepository.findById(genreId)
-                .orElseThrow(() -> new RuntimeException("Genre not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Genre not found with id: " + genreId
+                        )
+                );
 
         genre.setGenreName(request.getGenreName());
         genre.setDescription(request.getDescription());
@@ -67,9 +76,12 @@ public class GenreServiceImpl implements GenreService {
     public void deleteGenre(Long genreId) {
 
         Genre genre = genreRepository.findById(genreId)
-                .orElseThrow(() -> new RuntimeException("Genre not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Genre not found with id: " + genreId
+                        )
+                );
 
         genreRepository.delete(genre);
     }
-
 }

@@ -2,6 +2,7 @@ package com.streamforge.serviceimpl;
 
 import com.streamforge.dto.response.RoleResponse;
 import com.streamforge.entity.Role;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.RoleMapper;
 import com.streamforge.repository.RoleRepository;
 import com.streamforge.service.RoleService;
@@ -14,23 +15,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
-
     private final RoleRepository roleRepository;
-
     private final RoleMapper roleMapper;
-
 
     @Override
     public RoleResponse getRoleById(Long roleId) {
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(
-                        () -> new RuntimeException("Role not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found with id: " + roleId
+                        )
                 );
 
         return roleMapper.toResponse(role);
     }
-
 
     @Override
     public List<RoleResponse> getAllRoles() {
@@ -39,7 +38,5 @@ public class RoleServiceImpl implements RoleService {
                 .stream()
                 .map(roleMapper::toResponse)
                 .toList();
-
     }
-
 }

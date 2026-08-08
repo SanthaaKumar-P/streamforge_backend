@@ -5,6 +5,7 @@ import com.streamforge.dto.response.ShowFileResponse;
 import com.streamforge.entity.Show;
 import com.streamforge.entity.ShowFile;
 import com.streamforge.entity.User;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.ShowFileMapper;
 import com.streamforge.repository.ShowFileRepository;
 import com.streamforge.repository.ShowRepository;
@@ -19,31 +20,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShowFileServiceImpl implements ShowFileService {
 
-
     private final ShowFileRepository showFileRepository;
-
     private final ShowRepository showRepository;
-
     private final UserRepository userRepository;
-
     private final ShowFileMapper showFileMapper;
 
-
     @Override
-    public ShowFileResponse uploadFile(FileUploadRequest request) {
-
+    public ShowFileResponse uploadFile(
+            FileUploadRequest request
+    ) {
 
         Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(
-                        () -> new RuntimeException("Show not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: "
+                                        + request.getShowId()
+                        )
                 );
-
 
         User user = userRepository.findById(request.getUploadedBy())
-                .orElseThrow(
-                        () -> new RuntimeException("User not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: "
+                                        + request.getUploadedBy()
+                        )
                 );
-
 
         ShowFile file = ShowFile.builder()
                 .show(show)
@@ -53,30 +54,39 @@ public class ShowFileServiceImpl implements ShowFileService {
                 .fileUrl(request.getFileUrl())
                 .build();
 
-
         return showFileMapper.toResponse(
                 showFileRepository.save(file)
         );
-
     }
 
-
     @Override
-    public List<ShowFileResponse> getFilesByShow(Long showId) {
+    public List<ShowFileResponse> getFilesByShow(
+            Long showId
+    ) {
+
+        if (!showRepository.existsById(showId)) {
+            throw new ResourceNotFoundException(
+                    "Show not found with id: " + showId
+            );
+        }
 
         return showFileRepository.findByShowShowId(showId)
                 .stream()
                 .map(showFileMapper::toResponse)
                 .toList();
-
     }
-
 
     @Override
     public void deleteFile(Long fileId) {
 
-        showFileRepository.deleteById(fileId);
+        ShowFile file = showFileRepository.findById(fileId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show file not found with id: "
+                                        + fileId
+                        )
+                );
 
+        showFileRepository.delete(file);
     }
-
 }

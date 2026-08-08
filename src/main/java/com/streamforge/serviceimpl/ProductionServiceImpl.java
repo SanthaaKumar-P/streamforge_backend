@@ -5,6 +5,7 @@ import com.streamforge.dto.response.ProductionResponse;
 import com.streamforge.entity.Production;
 import com.streamforge.entity.Show;
 import com.streamforge.entity.User;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.ProductionMapper;
 import com.streamforge.repository.ProductionRepository;
 import com.streamforge.repository.ShowRepository;
@@ -19,33 +20,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductionServiceImpl implements ProductionService {
 
-
     private final ProductionRepository productionRepository;
-
     private final ShowRepository showRepository;
-
     private final UserRepository userRepository;
-
     private final ProductionMapper productionMapper;
-
 
     @Override
     public ProductionResponse createProduction(
             ProductionRequest request
     ) {
 
-
         Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(
-                        () -> new RuntimeException("Show not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: "
+                                        + request.getShowId()
+                        )
                 );
-
 
         User producer = userRepository.findById(request.getProducerId())
-                .orElseThrow(
-                        () -> new RuntimeException("Producer not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Producer not found with id: "
+                                        + request.getProducerId()
+                        )
                 );
-
 
         Production production = Production.builder()
                 .show(show)
@@ -59,36 +58,42 @@ public class ProductionServiceImpl implements ProductionService {
                 .notes(request.getNotes())
                 .build();
 
-
         return productionMapper.toResponse(
                 productionRepository.save(production)
         );
-
     }
 
-
     @Override
-    public ProductionResponse getProductionById(Long productionId) {
+    public ProductionResponse getProductionById(
+            Long productionId
+    ) {
 
         return productionRepository.findById(productionId)
                 .map(productionMapper::toResponse)
-                .orElseThrow(
-                        () -> new RuntimeException("Production not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Production not found with id: "
+                                        + productionId
+                        )
                 );
-
     }
 
-
     @Override
-    public List<ProductionResponse> getProductionsByShow(Long showId) {
+    public List<ProductionResponse> getProductionsByShow(
+            Long showId
+    ) {
+
+        if (!showRepository.existsById(showId)) {
+            throw new ResourceNotFoundException(
+                    "Show not found with id: " + showId
+            );
+        }
 
         return productionRepository.findByShowShowId(showId)
                 .stream()
                 .map(productionMapper::toResponse)
                 .toList();
-
     }
-
 
     @Override
     public ProductionResponse updateProduction(
@@ -96,13 +101,14 @@ public class ProductionServiceImpl implements ProductionService {
             ProductionRequest request
     ) {
 
-
         Production production =
                 productionRepository.findById(productionId)
-                .orElseThrow(
-                        () -> new RuntimeException("Production not found")
-                );
-
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Production not found with id: "
+                                                + productionId
+                                )
+                        );
 
         production.setProductionStatus(
                 request.getProductionStatus()
@@ -120,19 +126,23 @@ public class ProductionServiceImpl implements ProductionService {
                 request.getNotes()
         );
 
-
         return productionMapper.toResponse(
                 productionRepository.save(production)
         );
-
     }
-
 
     @Override
     public void deleteProduction(Long productionId) {
 
-        productionRepository.deleteById(productionId);
+        Production production =
+                productionRepository.findById(productionId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Production not found with id: "
+                                                + productionId
+                                )
+                        );
 
+        productionRepository.delete(production);
     }
-
 }
