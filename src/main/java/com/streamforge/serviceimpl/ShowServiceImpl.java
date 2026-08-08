@@ -4,6 +4,7 @@ import com.streamforge.dto.request.ShowRequest;
 import com.streamforge.dto.response.ShowResponse;
 import com.streamforge.entity.Show;
 import com.streamforge.entity.User;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.ShowMapper;
 import com.streamforge.repository.ShowRepository;
 import com.streamforge.repository.UserRepository;
@@ -17,23 +18,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShowServiceImpl implements ShowService {
 
-
     private final ShowRepository showRepository;
-
     private final UserRepository userRepository;
-
     private final ShowMapper showMapper;
-
 
     @Override
     public ShowResponse createShow(ShowRequest request) {
 
-
         User creator = userRepository.findById(request.getCreatorId())
-                .orElseThrow(
-                        () -> new RuntimeException("Creator not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Creator not found with id: " + request.getCreatorId()
+                        )
                 );
-
 
         Show show = Show.builder()
                 .creator(creator)
@@ -47,29 +44,23 @@ public class ShowServiceImpl implements ShowService {
                 .status(request.getStatus())
                 .build();
 
-
         return showMapper.toResponse(
                 showRepository.save(show)
         );
-
     }
-
-
 
     @Override
     public ShowResponse getShowById(Long showId) {
 
         Show show = showRepository.findById(showId)
-                .orElseThrow(
-                        () -> new RuntimeException("Show not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: " + showId
+                        )
                 );
 
-
         return showMapper.toResponse(show);
-
     }
-
-
 
     @Override
     public List<ShowResponse> getAllShows() {
@@ -78,10 +69,7 @@ public class ShowServiceImpl implements ShowService {
                 .stream()
                 .map(showMapper::toResponse)
                 .toList();
-
     }
-
-
 
     @Override
     public ShowResponse updateShow(
@@ -89,12 +77,12 @@ public class ShowServiceImpl implements ShowService {
             ShowRequest request
     ) {
 
-
         Show show = showRepository.findById(showId)
-                .orElseThrow(
-                        () -> new RuntimeException("Show not found")
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: " + showId
+                        )
                 );
-
 
         show.setTitle(request.getTitle());
         show.setDescription(request.getDescription());
@@ -105,20 +93,21 @@ public class ShowServiceImpl implements ShowService {
         show.setExpectedReleaseDate(request.getExpectedReleaseDate());
         show.setStatus(request.getStatus());
 
-
         return showMapper.toResponse(
                 showRepository.save(show)
         );
-
     }
-
-
 
     @Override
     public void deleteShow(Long showId) {
 
-        showRepository.deleteById(showId);
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Show not found with id: " + showId
+                        )
+                );
 
+        showRepository.delete(show);
     }
-
 }
