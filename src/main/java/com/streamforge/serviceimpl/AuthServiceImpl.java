@@ -7,8 +7,6 @@ import com.streamforge.dto.response.UserResponse;
 import com.streamforge.entity.Role;
 import com.streamforge.entity.Session;
 import com.streamforge.entity.User;
-import com.streamforge.exception.BadRequestException;
-import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.UserMapper;
 import com.streamforge.repository.RoleRepository;
 import com.streamforge.repository.SessionRepository;
@@ -35,42 +33,50 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final UserMapper userMapper;
 
+
     @Override
     public LoginResponse register(
             RegisterRequest request
     ) {
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-
-            throw new BadRequestException(
+        if (userRepository.existsByUsername(
+                request.getUsername()
+        )) {
+            throw new RuntimeException(
                     "Username already exists"
             );
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-
-            throw new BadRequestException(
+        if (userRepository.existsByEmail(
+                request.getEmail()
+        )) {
+            throw new RuntimeException(
                     "Email already exists"
             );
         }
 
-        // Default role = CREATOR
-        Role role = roleRepository.findByRoleName("CREATOR")
+
+        Role role = roleRepository
+                .findByRoleName("CREATOR")
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Default role CREATOR not found"
+                        new RuntimeException(
+                                "Default role not found"
                         )
                 );
+
 
         User user = User.builder()
                 .fullName(request.getFullName())
                 .username(request.getUsername())
                 .email(request.getEmail())
+
+                // BCrypt password hashing
                 .password(
                         passwordEncoder.encode(
                                 request.getPassword()
                         )
                 )
+
                 .phone(request.getPhone())
                 .employeeCode(request.getEmployeeCode())
                 .bio(request.getBio())
@@ -78,32 +84,46 @@ public class AuthServiceImpl implements AuthService {
                 .isActive(true)
                 .build();
 
-        User savedUser = userRepository.save(user);
 
-        String token = jwtService.generateToken(
-                savedUser.getUsername()
-        );
+        User savedUser =
+                userRepository.save(user);
 
-        Session session = Session.builder()
-                .user(savedUser)
-                .accessToken(token)
-                .loginTime(LocalDateTime.now())
-                .expiryTime(
-                        LocalDateTime.now().plusDays(1)
-                )
-                .isActive(true)
-                .build();
+
+        String token =
+                jwtService.generateToken(
+                        savedUser.getUsername()
+                );
+
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        Session session =
+                Session.builder()
+                        .user(savedUser)
+                        .accessToken(token)
+                        .loginTime(now)
+                        .expiryTime(
+                                now.plusDays(1)
+                        )
+                        .isActive(true)
+                        .build();
 
         sessionRepository.save(session);
 
+
         UserResponse response =
-                userMapper.toResponse(savedUser);
+                userMapper.toResponse(
+                        savedUser
+                );
+
 
         return LoginResponse.builder()
                 .accessToken(token)
                 .user(response)
                 .build();
     }
+
 
     @Override
     public LoginResponse login(
@@ -117,30 +137,40 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        User user = userRepository.findByUsername(
-                request.getUsername()
-        ).orElseThrow(() ->
-                new ResourceNotFoundException(
-                        "User not found with username: "
-                                + request.getUsername()
-                )
-        );
 
-        String token = jwtService.generateToken(
-                user.getUsername()
-        );
-
-        Session session = Session.builder()
-                .user(user)
-                .accessToken(token)
-                .loginTime(LocalDateTime.now())
-                .expiryTime(
-                        LocalDateTime.now().plusDays(1)
+        User user =
+                userRepository.findByUsername(
+                        request.getUsername()
                 )
-                .isActive(true)
-                .build();
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "User not found"
+                        )
+                );
+
+
+        String token =
+                jwtService.generateToken(
+                        user.getUsername()
+                );
+
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        Session session =
+                Session.builder()
+                        .user(user)
+                        .accessToken(token)
+                        .loginTime(now)
+                        .expiryTime(
+                                now.plusDays(1)
+                        )
+                        .isActive(true)
+                        .build();
 
         sessionRepository.save(session);
+
 
         return LoginResponse.builder()
                 .accessToken(token)

@@ -18,6 +18,7 @@ public class UserController {
 
     private final UserService userService;
 
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
@@ -25,8 +26,8 @@ public class UserController {
         return ResponseEntity.ok(
                 userService.getAllUsers()
         );
-
     }
+
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
@@ -37,11 +38,23 @@ public class UserController {
         return ResponseEntity.ok(
                 userService.getUserById(id)
         );
-
     }
 
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> createUser(
+            @Valid @RequestBody UserRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                userService.createUser(request)
+        );
+    }
+
+
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UserRequest request
@@ -50,8 +63,8 @@ public class UserController {
         return ResponseEntity.ok(
                 userService.updateUser(id, request)
         );
-
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -61,8 +74,8 @@ public class UserController {
 
         userService.deleteUser(id);
 
-        return ResponseEntity.ok("User deleted successfully");
-
+        return ResponseEntity.ok(
+                "User deleted successfully"
+        );
     }
-
 }

@@ -1,10 +1,10 @@
 package com.streamforge.serviceimpl;
 
-import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.dto.request.UserRequest;
 import com.streamforge.dto.response.UserResponse;
 import com.streamforge.entity.Role;
 import com.streamforge.entity.User;
+import com.streamforge.exception.ResourceNotFoundException;
 import com.streamforge.mapper.UserMapper;
 import com.streamforge.repository.RoleRepository;
 import com.streamforge.repository.UserRepository;
@@ -24,21 +24,32 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+
     @Override
     public UserResponse createUser(UserRequest request) {
 
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Role not found with id: " + request.getRoleId()
-                        )
+                        new ResourceNotFoundException("Role not found")
                 );
+
+        if (request.getPassword() == null ||
+                request.getPassword().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Password is required"
+            );
+        }
 
         User user = User.builder()
                 .fullName(request.getFullName())
                 .username(request.getUsername())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode("defaultPassword"))
+                .password(
+                        passwordEncoder.encode(
+                                request.getPassword()
+                        )
+                )
                 .phone(request.getPhone())
                 .employeeCode(request.getEmployeeCode())
                 .bio(request.getBio())
@@ -51,6 +62,7 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+
     @Override
     public UserResponse getUserById(Long userId) {
 
@@ -58,10 +70,11 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toResponse)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with id: " + userId
+                                "User not found"
                         )
                 );
     }
+
 
     @Override
     public UserResponse getUserByEmail(String email) {
@@ -70,10 +83,11 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toResponse)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with email: " + email
+                                "User not found"
                         )
                 );
     }
+
 
     @Override
     public List<UserResponse> getAllUsers() {
@@ -84,6 +98,7 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 
+
     @Override
     public UserResponse updateUser(
             Long userId,
@@ -93,18 +108,45 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with id: " + userId
+                                "User not found"
                         )
                 );
 
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
+        user.setEmployeeCode(request.getEmployeeCode());
         user.setBio(request.getBio());
+
+        // Update password only when provided
+        if (request.getPassword() != null &&
+                !request.getPassword().isBlank()) {
+
+            user.setPassword(
+                    passwordEncoder.encode(
+                            request.getPassword()
+                    )
+            );
+        }
+
+        // Update role only when provided
+        if (request.getRoleId() != null) {
+
+            Role role = roleRepository.findById(
+                    request.getRoleId()
+            ).orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Role not found"
+                    )
+            );
+
+            user.setRole(role);
+        }
 
         return userMapper.toResponse(
                 userRepository.save(user)
         );
     }
+
 
     @Override
     public void deleteUser(Long userId) {
@@ -112,7 +154,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with id: " + userId
+                                "User not found"
                         )
                 );
 

@@ -19,7 +19,7 @@ public class EvaluationController {
     private final EvaluationService evaluationService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTENT_MANAGER')")
     public ResponseEntity<EvaluationResponse> createEvaluation(
             @Valid @RequestBody EvaluationRequest request) {
 
@@ -49,13 +49,16 @@ public class EvaluationController {
     }
 
     @PutMapping("/{evaluationId}")
-    @PreAuthorize("hasAnyRole('ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CONTENT_MANAGER')")
     public ResponseEntity<EvaluationResponse> updateEvaluation(
             @PathVariable Long evaluationId,
             @Valid @RequestBody EvaluationRequest request) {
 
         return ResponseEntity.ok(
-                evaluationService.updateEvaluation(evaluationId, request)
+                evaluationService.updateEvaluation(
+                        evaluationId,
+                        request
+                )
         );
     }
 
@@ -66,7 +69,8 @@ public class EvaluationController {
 
         evaluationService.deleteEvaluation(evaluationId);
 
-        return ResponseEntity.ok("Evaluation deleted successfully");
+        return ResponseEntity.ok(
+                "Evaluation deleted successfully"
+        );
     }
-
 }

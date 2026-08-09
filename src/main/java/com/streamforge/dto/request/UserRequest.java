@@ -22,6 +22,7 @@ public class UserRequest {
     )
     private String fullName;
 
+
     @NotBlank(message = "Username is required")
     @Size(
             min = 3,
@@ -30,9 +31,19 @@ public class UserRequest {
     )
     private String username;
 
+
     @NotBlank(message = "Email is required")
     @Email(message = "Enter a valid email address")
     private String email;
+
+
+    @Size(
+            min = 6,
+            max = 100,
+            message = "Password must be between 6 and 100 characters"
+    )
+    private String password;
+
 
     @Pattern(
             regexp = "^[0-9]{10}$",
@@ -40,17 +51,20 @@ public class UserRequest {
     )
     private String phone;
 
+
     @Size(
             max = 50,
             message = "Employee code cannot exceed 50 characters"
     )
     private String employeeCode;
 
+
     @Size(
             max = 500,
             message = "Bio cannot exceed 500 characters"
     )
     private String bio;
+
 
     @Positive(message = "Role ID must be a positive number")
     private Long roleId;
