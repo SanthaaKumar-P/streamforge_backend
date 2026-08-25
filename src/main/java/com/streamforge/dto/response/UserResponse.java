@@ -19,8 +19,11 @@ public class UserResponse {
 
     private String phone;
 
+    private String employeeCode;
+
+    private String bio;
+
     private Boolean isActive;
 
     private RoleResponse role;
-
 }
