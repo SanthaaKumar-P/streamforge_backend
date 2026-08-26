@@ -13,11 +13,13 @@ import com.streamforge.repository.UserRepository;
 import com.streamforge.service.ProductionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProductionServiceImpl implements ProductionService {
 
     private final ProductionRepository productionRepository;
@@ -64,21 +66,25 @@ public class ProductionServiceImpl implements ProductionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductionResponse getProductionById(
             Long productionId
     ) {
 
-        return productionRepository.findById(productionId)
-                .map(productionMapper::toResponse)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Production not found with id: "
-                                        + productionId
-                        )
-                );
+        Production production =
+                productionRepository.findById(productionId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Production not found with id: "
+                                                + productionId
+                                )
+                        );
+
+        return productionMapper.toResponse(production);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductionResponse> getProductionsByShow(
             Long showId
     ) {
@@ -89,7 +95,8 @@ public class ProductionServiceImpl implements ProductionService {
             );
         }
 
-        return productionRepository.findByShowShowId(showId)
+        return productionRepository
+                .findByShowShowId(showId)
                 .stream()
                 .map(productionMapper::toResponse)
                 .toList();
@@ -110,18 +117,44 @@ public class ProductionServiceImpl implements ProductionService {
                                 )
                         );
 
+        Show show =
+                showRepository.findById(request.getShowId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Show not found with id: "
+                                                + request.getShowId()
+                                )
+                        );
+
+        User producer =
+                userRepository.findById(request.getProducerId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Producer not found with id: "
+                                                + request.getProducerId()
+                                )
+                        );
+
+        production.setShow(show);
+        production.setProducer(producer);
         production.setProductionStatus(
                 request.getProductionStatus()
         );
-
         production.setAllocatedBudget(
                 request.getAllocatedBudget()
         );
-
         production.setActualBudget(
                 request.getActualBudget()
         );
-
+        production.setStartDate(
+                request.getStartDate()
+        );
+        production.setExpectedEndDate(
+                request.getExpectedEndDate()
+        );
+        production.setCompletionDate(
+                request.getCompletionDate()
+        );
         production.setNotes(
                 request.getNotes()
         );

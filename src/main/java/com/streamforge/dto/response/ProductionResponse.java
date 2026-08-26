@@ -4,6 +4,7 @@ import com.streamforge.enums.ProductionStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -14,12 +15,21 @@ public class ProductionResponse {
 
     private Long productionId;
 
+    private Long showId;
+
+    private Long producerId;
+
     private ProductionStatus productionStatus;
 
     private BigDecimal allocatedBudget;
 
     private BigDecimal actualBudget;
 
-    private String notes;
+    private LocalDate startDate;
 
+    private LocalDate expectedEndDate;
+
+    private LocalDate completionDate;
+
+    private String notes;
 }
