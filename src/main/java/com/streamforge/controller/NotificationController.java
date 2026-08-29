@@ -16,34 +16,50 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<NotificationResponse>> getUserNotifications(
-            @PathVariable Long userId) {
+    public ResponseEntity<List<NotificationResponse>>
+    getUserNotifications(
+            @PathVariable Long userId
+    ) {
 
         return ResponseEntity.ok(
-                notificationService.getUserNotifications(userId)
+                notificationService.getUserNotifications(
+                        userId
+                )
         );
     }
+
 
     @PutMapping("/{notificationId}/read")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<NotificationResponse> markAsRead(
-            @PathVariable Long notificationId) {
+    public ResponseEntity<NotificationResponse>
+    markAsRead(
+            @PathVariable Long notificationId
+    ) {
 
         return ResponseEntity.ok(
-                notificationService.markAsRead(notificationId)
+                notificationService.markAsRead(
+                        notificationId
+                )
         );
     }
 
+
     @DeleteMapping("/{notificationId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteNotification(
-            @PathVariable Long notificationId) {
+    public ResponseEntity<String>
+    deleteNotification(
+            @PathVariable Long notificationId
+    ) {
 
-        notificationService.deleteNotification(notificationId);
+        notificationService.deleteNotification(
+                notificationId
+        );
 
-        return ResponseEntity.ok("Notification deleted successfully");
+        return ResponseEntity.ok(
+                "Notification deleted successfully"
+        );
     }
-
 }

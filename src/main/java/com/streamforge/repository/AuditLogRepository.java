@@ -9,8 +9,7 @@ import java.util.List;
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
-    List<AuditLog> findByUserUserId(Long userId);
+    List<AuditLog> findByUserUserIdOrderByActionTimeDesc(Long userId);
 
     List<AuditLog> findByEntityName(String entityName);
-
 }

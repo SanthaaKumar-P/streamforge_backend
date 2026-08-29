@@ -17,4 +17,6 @@ public class ReportResponse {
 
     private String filePath;
 
+    private String format;
+
 }

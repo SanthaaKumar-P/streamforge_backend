@@ -13,6 +13,7 @@ public interface AuditLogService {
             Long entityId
     );
 
-    List<AuditLogResponse> getUserLogs(Long userId);
-
+    List<AuditLogResponse> getUserLogs(
+            Long userId
+    );
 }

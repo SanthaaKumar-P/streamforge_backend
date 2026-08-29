@@ -16,6 +16,10 @@ public class AuditLogController {
 
     private final AuditLogService auditLogService;
 
+    // =========================================================
+    // CREATE AUDIT LOG
+    // =========================================================
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AuditLogResponse> createLog(
@@ -34,6 +38,10 @@ public class AuditLogController {
         );
     }
 
+    // =========================================================
+    // GET LOGS BY USER
+    // =========================================================
+
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AuditLogResponse>> getUserLogs(
@@ -43,5 +51,4 @@ public class AuditLogController {
                 auditLogService.getUserLogs(userId)
         );
     }
-
 }

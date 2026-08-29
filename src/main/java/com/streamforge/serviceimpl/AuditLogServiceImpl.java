@@ -10,16 +10,23 @@ import com.streamforge.repository.UserRepository;
 import com.streamforge.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
     private final AuditLogMapper auditLogMapper;
+
+    // =========================================================
+    // CREATE LOG
+    // =========================================================
 
     @Override
     public AuditLogResponse createLog(
@@ -41,15 +48,24 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .action(action)
                 .entityName(entityName)
                 .entityId(entityId)
+                .actionTime(LocalDateTime.now())
                 .build();
 
-        return auditLogMapper.toResponse(
-                auditLogRepository.save(log)
-        );
+        AuditLog savedLog =
+                auditLogRepository.save(log);
+
+        return auditLogMapper.toResponse(savedLog);
     }
 
+    // =========================================================
+    // GET USER LOGS
+    // =========================================================
+
     @Override
-    public List<AuditLogResponse> getUserLogs(Long userId) {
+    @Transactional(readOnly = true)
+    public List<AuditLogResponse> getUserLogs(
+            Long userId
+    ) {
 
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException(
@@ -58,7 +74,7 @@ public class AuditLogServiceImpl implements AuditLogService {
         }
 
         return auditLogRepository
-                .findByUserUserId(userId)
+                .findByUserUserIdOrderByActionTimeDesc(userId)
                 .stream()
                 .map(auditLogMapper::toResponse)
                 .toList();

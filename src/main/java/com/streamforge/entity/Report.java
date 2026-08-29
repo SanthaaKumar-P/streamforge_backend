@@ -32,5 +32,4 @@ public class Report extends BaseEntity {
 
     @Column(name = "file_path")
     private String filePath;
-
 }

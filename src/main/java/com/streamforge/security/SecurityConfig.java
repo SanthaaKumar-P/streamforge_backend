@@ -1,7 +1,6 @@
 package com.streamforge.security;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,9 +32,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private final CustomUserDetailsService userDetailsService;
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -44,57 +41,131 @@ public class SecurityConfig {
 
         http
 
-            .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
 
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(
-                            SessionCreationPolicy.STATELESS
-                    )
-            )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
-            .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
 
-                    // Public APIs
-                    .requestMatchers(
-                            "/api/auth/**",
-                            "/swagger-ui/**",
-                            "/v3/api-docs/**"
-                    )
-                    .permitAll()
+                        // ==============================
+                        // PUBLIC
+                        // ==============================
 
-                    // Admin APIs
-                    .requestMatchers("/api/admin/**")
-                    .hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        )
+                        .permitAll()
 
-                    // Creator APIs
-                    .requestMatchers("/api/creator/**")
-                    .hasRole("CREATOR")
+                        // ==============================
+                        // ADMIN
+                        // ==============================
 
-                    // Producer APIs
-                    .requestMatchers("/api/producer/**")
-                    .hasRole("PRODUCER")
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
 
-                    // Content Manager APIs
-                    .requestMatchers("/api/content/**")
-                    .hasRole("CONTENT_MANAGER")
+                        // ==============================
+                        // CREATOR
+                        // ==============================
 
-                    // Everything else
-                    .anyRequest()
-                    .authenticated()
-            )
+                        .requestMatchers("/api/creator/**")
+                        .hasRole("CREATOR")
 
-            .authenticationProvider(authenticationProvider())
+                        // ==============================
+                        // PRODUCER
+                        // ==============================
 
-            .addFilterBefore(
-                    jwtAuthenticationFilter,
-                    UsernamePasswordAuthenticationFilter.class
-            );
+                        .requestMatchers("/api/producer/**")
+                        .hasRole("PRODUCER")
+
+                        // ==============================
+                        // CONTENT MANAGER
+                        // ==============================
+
+                        .requestMatchers("/api/content/**")
+                        .hasRole("CONTENT_MANAGER")
+
+                        // ==============================
+                        // PRODUCTION
+                        // ==============================
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/productions/**"
+                        )
+                        .hasAnyRole("ADMIN", "PRODUCER")
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.PUT,
+                                "/api/productions/**"
+                        )
+                        .hasAnyRole("ADMIN", "PRODUCER")
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.DELETE,
+                                "/api/productions/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/productions/**"
+                        )
+                        .authenticated()
+
+                        // ==============================
+                        // PRODUCTION TEAM
+                        // ==============================
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/production-team/**"
+                        )
+                        .hasAnyRole("ADMIN", "PRODUCER")
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.DELETE,
+                                "/api/production-team/**"
+                        )
+                        .hasAnyRole("ADMIN", "PRODUCER")
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/production-team/**"
+                        )
+                        .authenticated()
+
+                        // ==============================
+                        // EVERYTHING ELSE
+                        // ==============================
+
+                        .anyRequest()
+                        .authenticated()
+                )
+
+                .authenticationProvider(
+                        authenticationProvider()
+                )
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -104,8 +175,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(
                 List.of(
-                        "http://localhost:8081",
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "http://localhost:8081"
                 )
         );
 
@@ -141,7 +212,6 @@ public class SecurityConfig {
         return source;
     }
 
-
     @Bean
     public AuthenticationProvider authenticationProvider() {
 
@@ -159,13 +229,11 @@ public class SecurityConfig {
         return provider;
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(

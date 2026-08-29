@@ -24,5 +24,4 @@ public class AuditLogResponse {
     private String userAgent;
 
     private LocalDateTime actionTime;
-
 }

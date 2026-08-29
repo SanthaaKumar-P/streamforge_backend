@@ -7,17 +7,26 @@ import java.util.List;
 
 public interface ProductionService {
 
-    ProductionResponse createProduction(ProductionRequest request);
+    ProductionResponse createProduction(
+            ProductionRequest request
+    );
 
-    ProductionResponse getProductionById(Long productionId);
+    ProductionResponse getProductionById(
+            Long productionId
+    );
 
-    List<ProductionResponse> getProductionsByShow(Long showId);
+    List<ProductionResponse> getProductionsByShow(
+            Long showId
+    );
+
+    List<ProductionResponse> getAllProductions();
 
     ProductionResponse updateProduction(
             Long productionId,
             ProductionRequest request
     );
 
-    void deleteProduction(Long productionId);
-
+    void deleteProduction(
+            Long productionId
+    );
 }

@@ -1,5 +1,6 @@
 package com.streamforge.service;
 
+import com.streamforge.dto.request.ReportGenerateRequest;
 import com.streamforge.dto.response.ReportResponse;
 
 import java.util.List;
@@ -7,11 +8,11 @@ import java.util.List;
 public interface ReportService {
 
     ReportResponse generateReport(
-            Long userId,
-            String reportName,
-            String reportType
+            ReportGenerateRequest request
     );
 
-    List<ReportResponse> getReportsByUser(Long userId);
+    List<ReportResponse> getReportsByUser(
+            Long userId
+    );
 
 }

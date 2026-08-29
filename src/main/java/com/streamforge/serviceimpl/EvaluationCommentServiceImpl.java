@@ -12,17 +12,28 @@ import com.streamforge.repository.UserRepository;
 import com.streamforge.service.EvaluationCommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class EvaluationCommentServiceImpl implements EvaluationCommentService {
+@Transactional
+public class EvaluationCommentServiceImpl
+        implements EvaluationCommentService {
 
     private final EvaluationCommentRepository commentRepository;
+
     private final EvaluationRepository evaluationRepository;
+
     private final UserRepository userRepository;
+
     private final EvaluationCommentMapper commentMapper;
+
+
+    // =========================================================
+    // ADD COMMENT
+    // =========================================================
 
     @Override
     public EvaluationCommentResponse addComment(
@@ -32,65 +43,101 @@ public class EvaluationCommentServiceImpl implements EvaluationCommentService {
     ) {
 
         Evaluation evaluation =
-                evaluationRepository.findById(evaluationId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Evaluation not found with id: "
-                                                + evaluationId
-                                )
-                        );
+                evaluationRepository.findById(
+                        evaluationId
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluation not found with id: "
+                                        + evaluationId
+                        )
+                );
+
 
         User user =
-                userRepository.findById(userId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "User not found with id: "
-                                                + userId
-                                )
-                        );
+                userRepository.findById(
+                        userId
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: "
+                                        + userId
+                        )
+                );
+
 
         EvaluationComment evaluationComment =
                 EvaluationComment.builder()
                         .evaluation(evaluation)
                         .user(user)
-                        .comment(comment)
+                        .comment(comment.trim())
                         .build();
 
+
+        EvaluationComment saved =
+                commentRepository.save(
+                        evaluationComment
+                );
+
+
         return commentMapper.toResponse(
-                commentRepository.save(evaluationComment)
+                saved
         );
     }
 
+
+    // =========================================================
+    // GET COMMENTS
+    // =========================================================
+
     @Override
-    public List<EvaluationCommentResponse> getCommentsByEvaluation(
+    @Transactional(readOnly = true)
+    public List<EvaluationCommentResponse>
+    getCommentsByEvaluation(
             Long evaluationId
     ) {
 
-        if (!evaluationRepository.existsById(evaluationId)) {
+        if (!evaluationRepository.existsById(
+                evaluationId
+        )) {
+
             throw new ResourceNotFoundException(
-                    "Evaluation not found with id: " + evaluationId
+                    "Evaluation not found with id: "
+                            + evaluationId
             );
         }
 
+
         return commentRepository
-                .findByEvaluationEvaluationId(evaluationId)
+                .findByEvaluationEvaluationId(
+                        evaluationId
+                )
                 .stream()
                 .map(commentMapper::toResponse)
                 .toList();
     }
 
+
+    // =========================================================
+    // DELETE COMMENT
+    // =========================================================
+
     @Override
-    public void deleteComment(Long commentId) {
+    public void deleteComment(
+            Long commentId
+    ) {
 
         EvaluationComment comment =
-                commentRepository.findById(commentId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Evaluation comment not found with id: "
-                                                + commentId
-                                )
-                        );
+                commentRepository.findById(
+                        commentId
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Evaluation comment not found with id: "
+                                        + commentId
+                        )
+                );
 
-        commentRepository.delete(comment);
+
+        commentRepository.delete(
+                comment
+        );
     }
 }
