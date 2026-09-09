@@ -23,159 +23,250 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl
+        implements AuthService {
 
     private final UserRepository userRepository;
+
     private final RoleRepository roleRepository;
+
     private final SessionRepository sessionRepository;
+
     private final PasswordEncoder passwordEncoder;
+
     private final AuthenticationManager authenticationManager;
+
     private final JwtService jwtService;
+
     private final UserMapper userMapper;
 
+
+    // =========================================================
+    // REGISTER
+    // =========================================================
 
     @Override
     public LoginResponse register(
             RegisterRequest request
     ) {
 
-        if (userRepository.existsByUsername(
-                request.getUsername()
-        )) {
+        if (
+                userRepository.existsByUsername(
+                        request.getUsername()
+                )
+        ) {
+
             throw new RuntimeException(
                     "Username already exists"
             );
         }
 
-        if (userRepository.existsByEmail(
-                request.getEmail()
-        )) {
+        if (
+                userRepository.existsByEmail(
+                        request.getEmail()
+                )
+        ) {
+
             throw new RuntimeException(
                     "Email already exists"
             );
         }
 
-
-        Role role = roleRepository
-                .findByRoleName("CREATOR")
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Default role not found"
+        Role role =
+                roleRepository
+                        .findByRoleName(
+                                "CREATOR"
                         )
-                );
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Default role not found"
+                                )
+                        );
 
-
-        User user = User.builder()
-                .fullName(request.getFullName())
-                .username(request.getUsername())
-                .email(request.getEmail())
-
-                // BCrypt password hashing
-                .password(
-                        passwordEncoder.encode(
-                                request.getPassword()
+        User user =
+                User.builder()
+                        .fullName(
+                                request.getFullName()
                         )
-                )
-
-                .phone(request.getPhone())
-                .employeeCode(request.getEmployeeCode())
-                .bio(request.getBio())
-                .role(role)
-                .isActive(true)
-                .build();
-
+                        .username(
+                                request.getUsername()
+                        )
+                        .email(
+                                request.getEmail()
+                        )
+                        .password(
+                                passwordEncoder.encode(
+                                        request.getPassword()
+                                )
+                        )
+                        .phone(
+                                request.getPhone()
+                        )
+                        .employeeCode(
+                                request.getEmployeeCode()
+                        )
+                        .bio(
+                                request.getBio()
+                        )
+                        .role(
+                                role
+                        )
+                        .isActive(true)
+                        .build();
 
         User savedUser =
-                userRepository.save(user);
-
+                userRepository.save(
+                        user
+                );
 
         String token =
                 jwtService.generateToken(
                         savedUser.getUsername()
                 );
 
-
         LocalDateTime now =
                 LocalDateTime.now();
 
         Session session =
                 Session.builder()
-                        .user(savedUser)
-                        .accessToken(token)
-                        .loginTime(now)
+                        .user(
+                                savedUser
+                        )
+                        .accessToken(
+                                token
+                        )
+                        .loginTime(
+                                now
+                        )
                         .expiryTime(
                                 now.plusDays(1)
                         )
                         .isActive(true)
                         .build();
 
-        sessionRepository.save(session);
-
+        sessionRepository.save(
+                session
+        );
 
         UserResponse response =
                 userMapper.toResponse(
                         savedUser
                 );
 
-
         return LoginResponse.builder()
-                .accessToken(token)
-                .user(response)
+                .accessToken(
+                        token
+                )
+                .user(
+                        response
+                )
                 .build();
     }
 
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
 
     @Override
     public LoginResponse login(
             LoginRequest request
     ) {
 
+        String credential =
+                request.getUsername() == null
+                        ? ""
+                        : request.getUsername().trim();
+
+        if (credential.isBlank()) {
+
+            throw new RuntimeException(
+                    "Username or email is required"
+            );
+        }
+
+        /*
+         * Spring Security verifies BCrypt password.
+         */
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
+                        credential,
                         request.getPassword()
                 )
         );
 
-
+        /*
+         * Find the same authenticated user.
+         */
         User user =
-                userRepository.findByUsername(
-                        request.getUsername()
-                )
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"
+                userRepository
+                        .findByUsername(
+                                credential
                         )
-                );
+                        .or(() ->
+                                userRepository
+                                        .findByEmail(
+                                                credential
+                                        )
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "User not found"
+                                )
+                        );
 
+        if (!Boolean.TRUE.equals(
+                user.getIsActive()
+        )) {
 
+            throw new RuntimeException(
+                    "Account is inactive"
+            );
+        }
+
+        /*
+         * Generate access JWT.
+         */
         String token =
                 jwtService.generateToken(
                         user.getUsername()
                 );
 
-
         LocalDateTime now =
                 LocalDateTime.now();
 
+        /*
+         * Create active server-side session.
+         */
         Session session =
                 Session.builder()
-                        .user(user)
-                        .accessToken(token)
-                        .loginTime(now)
+                        .user(
+                                user
+                        )
+                        .accessToken(
+                                token
+                        )
+                        .loginTime(
+                                now
+                        )
                         .expiryTime(
                                 now.plusDays(1)
                         )
                         .isActive(true)
                         .build();
 
-        sessionRepository.save(session);
-
+        sessionRepository.save(
+                session
+        );
 
         return LoginResponse.builder()
-                .accessToken(token)
+                .accessToken(
+                        token
+                )
                 .user(
-                        userMapper.toResponse(user)
+                        userMapper.toResponse(
+                                user
+                        )
                 )
                 .build();
     }

@@ -12,5 +12,4 @@ public interface ReportFileService {
             Long userId,
             ReportFormat format
     ) throws IOException;
-
 }

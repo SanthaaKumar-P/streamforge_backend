@@ -46,6 +46,9 @@ public class Show extends BaseEntity {
     @Column(name = "target_audience")
     private String targetAudience;
 
+    @Column(name = "episode_count", nullable = false)
+private Integer episodeCount;
+
     @Column(name = "estimated_budget")
     private BigDecimal estimatedBudget;
 

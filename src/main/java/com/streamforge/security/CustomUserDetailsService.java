@@ -10,39 +10,59 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+public class CustomUserDetailsService
+        implements UserDetailsService {
 
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username)
-            throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(
+            String credential
+    ) throws UsernameNotFoundException {
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "User not found: " + username
+        String value =
+                credential == null
+                        ? ""
+                        : credential.trim();
+
+        if (value.isBlank()) {
+            throw new UsernameNotFoundException(
+                    "Username or email is required"
+            );
+        }
+
+        User user =
+                userRepository
+                        .findByUsername(value)
+                        .or(() ->
+                                userRepository
+                                        .findByEmail(value)
                         )
-                );
+                        .orElseThrow(() ->
+                                new UsernameNotFoundException(
+                                        "Invalid username or email"
+                                )
+                        );
 
-        if (!Boolean.TRUE.equals(user.getIsActive())) {
+        if (!Boolean.TRUE.equals(
+                user.getIsActive()
+        )) {
+
             throw new UsernameNotFoundException(
-                    "User account is inactive: " + username
+                    "User account is inactive"
             );
         }
 
-        if (user.getRole() == null) {
+        if (
+                user.getRole() == null ||
+                user.getRole().getRoleName() == null ||
+                user.getRole().getRoleName().isBlank()
+        ) {
+
             throw new UsernameNotFoundException(
-                    "No role assigned to user: " + username
+                    "No role assigned to user"
             );
         }
-
-        System.out.println(
-                "User loaded: "
-                        + user.getUsername()
-                        + " | Role: "
-                        + user.getRole().getRoleName()
-        );
 
         return new CustomUserDetails(user);
     }

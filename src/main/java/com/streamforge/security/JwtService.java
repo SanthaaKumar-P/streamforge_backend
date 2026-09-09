@@ -11,54 +11,135 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    /*
+     * Keep this unchanged for the current project.
+     */
     private static final String SECRET_KEY =
             "streamforge-secret-key-streamforge-secret-key";
 
+    /*
+     * 24-hour access token.
+     */
     private static final long EXPIRATION_TIME =
             1000L * 60 * 60 * 24;
 
     private SecretKey getSigningKey() {
 
         return Keys.hmacShaKeyFor(
-                SECRET_KEY.getBytes(StandardCharsets.UTF_8)
+                SECRET_KEY.getBytes(
+                        StandardCharsets.UTF_8
+                )
         );
     }
 
-    public String generateToken(String username) {
+    /**
+     * Generate access JWT.
+     */
+    public String generateToken(
+            String username
+    ) {
 
         return Jwts.builder()
                 .subject(username)
-                .issuedAt(new Date())
+
+                /*
+                 * Explicitly identify this as
+                 * an access token.
+                 */
+                .claim(
+                        "type",
+                        "access"
+                )
+
+                .issuedAt(
+                        new Date()
+                )
+
                 .expiration(
                         new Date(
                                 System.currentTimeMillis()
                                         + EXPIRATION_TIME
                         )
                 )
-                .signWith(getSigningKey())
+
+                .signWith(
+                        getSigningKey()
+                )
+
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    /**
+     * Extract username.
+     */
+    public String extractUsername(
+            String token
+    ) {
 
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(
+                        getSigningKey()
+                )
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
-    public boolean validateToken(String token) {
+    /**
+     * Validate JWT signature and expiration.
+     */
+    public boolean validateToken(
+            String token
+    ) {
 
         try {
 
             Jwts.parser()
-                    .verifyWith(getSigningKey())
+                    .verifyWith(
+                            getSigningKey()
+                    )
                     .build()
                     .parseSignedClaims(token);
 
             return true;
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "JWT ERROR: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    /**
+     * Verify that the token is an access token.
+     */
+    public boolean isAccessToken(
+            String token
+    ) {
+
+        try {
+
+            String type =
+                    Jwts.parser()
+                            .verifyWith(
+                                    getSigningKey()
+                            )
+                            .build()
+                            .parseSignedClaims(token)
+                            .getPayload()
+                            .get(
+                                    "type",
+                                    String.class
+                            );
+
+            return "access".equals(
+                    type
+            );
 
         } catch (Exception e) {
 

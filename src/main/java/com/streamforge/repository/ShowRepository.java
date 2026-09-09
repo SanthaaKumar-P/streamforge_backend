@@ -8,14 +8,31 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ShowRepository extends JpaRepository<Show, Long> {
+public interface ShowRepository
+        extends JpaRepository<Show, Long> {
 
-    List<Show> findByStatus(ShowStatus status);
+    List<Show> findByStatus(
+            ShowStatus status
+    );
 
-    List<Show> findByCreatorUserId(Long userId);
+    List<Show> findByCreatorUserId(
+            Long userId
+    );
 
-    List<Show> findByLanguage(String language);
+    List<Show> findByLanguage(
+            String language
+    );
 
-    List<Show> findByTitleContainingIgnoreCase(String title);
+    List<Show> findByTitleContainingIgnoreCase(
+            String title
+    );
 
+    boolean existsByTitleIgnoreCase(
+            String title
+    );
+
+    boolean existsByTitleIgnoreCaseAndShowIdNot(
+            String title,
+            Long showId
+    );
 }

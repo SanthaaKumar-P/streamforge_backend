@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -25,6 +26,8 @@ public class ShowResponse {
 
     private String targetAudience;
 
+    private Integer episodeCount;
+
     private BigDecimal estimatedBudget;
 
     private LocalDate expectedReleaseDate;
@@ -33,4 +36,5 @@ public class ShowResponse {
 
     private UserResponse creator;
 
+    private List<GenreResponse> genres;
 }
