@@ -6,6 +6,7 @@ import com.streamforge.entity.Genre;
 import com.streamforge.entity.Show;
 import com.streamforge.entity.ShowGenre;
 import com.streamforge.entity.User;
+import com.streamforge.enums.NotificationType;
 import com.streamforge.enums.ShowStatus;
 import com.streamforge.exception.BadRequestException;
 import com.streamforge.exception.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import com.streamforge.repository.GenreRepository;
 import com.streamforge.repository.ShowRepository;
 import com.streamforge.repository.UserRepository;
 import com.streamforge.service.AuditLogService;
+import com.streamforge.service.NotificationService;
 import com.streamforge.service.ShowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,8 @@ public class ShowServiceImpl
     private final ShowMapper showMapper;
 
     private final AuditLogService auditLogService;
+
+    private final NotificationService notificationService;
 
 
     // =========================================================
@@ -70,6 +74,7 @@ public class ShowServiceImpl
             );
         }
 
+
         /*
          * Creator validation.
          */
@@ -85,6 +90,7 @@ public class ShowServiceImpl
                                 )
                         );
 
+
         /*
          * Genre validation.
          */
@@ -97,6 +103,7 @@ public class ShowServiceImpl
                 genreRepository.findAllById(
                         genreIds
                 );
+
 
         if (
                 genres.size()
@@ -129,14 +136,12 @@ public class ShowServiceImpl
             );
         }
 
+
         /*
          * Build show.
          *
          * IMPORTANT:
-         * Client cannot force APPROVED / COMPLETED /
-         * IN_PRODUCTION during creation.
-         *
-         * A newly submitted show always enters SUBMITTED.
+         * Newly created shows always start as SUBMITTED.
          */
         Show show =
                 Show.builder()
@@ -180,6 +185,7 @@ public class ShowServiceImpl
                         )
                         .build();
 
+
         /*
          * Attach genres.
          */
@@ -195,6 +201,7 @@ public class ShowServiceImpl
                     .add(showGenre);
         }
 
+
         /*
          * Save.
          */
@@ -202,6 +209,7 @@ public class ShowServiceImpl
                 showRepository.save(
                         show
                 );
+
 
         /*
          * Audit.
@@ -212,6 +220,26 @@ public class ShowServiceImpl
                 "SHOW",
                 savedShow.getShowId()
         );
+
+
+        /*
+         * =====================================================
+         * NOTIFICATION
+         * =====================================================
+         *
+         * The creator receives confirmation that the show
+         * has successfully entered the submission workflow.
+         */
+
+        notificationService.createNotification(
+                creator.getUserId(),
+                "Show Submitted",
+                "Your show '" +
+                        savedShow.getTitle() +
+                        "' has been submitted successfully and is now awaiting review.",
+                NotificationType.SUCCESS
+        );
+
 
         return showMapper.toResponse(
                 savedShow
@@ -287,12 +315,14 @@ public class ShowServiceImpl
                                 )
                         );
 
+
         validateTitle(
                 request.getTitle()
         );
 
+
         /*
-         * Duplicate title protection on update.
+         * Duplicate title protection.
          */
         if (
                 showRepository
@@ -309,6 +339,7 @@ public class ShowServiceImpl
             );
         }
 
+
         /*
          * Validate genres.
          */
@@ -322,6 +353,7 @@ public class ShowServiceImpl
                         genreIds
                 );
 
+
         if (
                 genres.size()
                         != genreIds.size()
@@ -332,6 +364,10 @@ public class ShowServiceImpl
             );
         }
 
+
+        /*
+         * Update fields.
+         */
         show.setTitle(
                 request.getTitle().trim()
         );
@@ -372,12 +408,9 @@ public class ShowServiceImpl
                 request.getExpectedReleaseDate()
         );
 
+
         /*
-         * Do not blindly accept status from frontend.
-         *
-         * Existing status remains unchanged.
-         * Workflow transitions will be handled by the
-         * evaluation/approval module.
+         * Existing workflow status.
          */
         if (
                 request.getStatus() != null
@@ -388,11 +421,13 @@ public class ShowServiceImpl
             );
         }
 
+
         /*
          * Replace genre links.
          */
         show.getShowGenres()
                 .clear();
+
 
         for (Genre genre : genres) {
 
@@ -405,17 +440,39 @@ public class ShowServiceImpl
                     );
         }
 
+
         Show savedShow =
                 showRepository.save(
                         show
                 );
 
+
+        /*
+         * Audit.
+         */
         auditLogService.createLog(
                 show.getCreator().getUserId(),
                 "UPDATE",
                 "SHOW",
                 savedShow.getShowId()
         );
+
+
+        /*
+         * =====================================================
+         * NOTIFICATION
+         * =====================================================
+         */
+
+        notificationService.createNotification(
+                show.getCreator().getUserId(),
+                "Show Updated",
+                "Your show '" +
+                        savedShow.getTitle() +
+                        "' has been updated successfully.",
+                NotificationType.INFO
+        );
+
 
         return showMapper.toResponse(
                 savedShow
@@ -444,13 +501,23 @@ public class ShowServiceImpl
                                 )
                         );
 
+
         Long creatorId =
                 show.getCreator()
                         .getUserId();
 
+
         Long deletedShowId =
                 show.getShowId();
 
+
+        String title =
+                show.getTitle();
+
+
+        /*
+         * Audit before deletion.
+         */
         auditLogService.createLog(
                 creatorId,
                 "DELETE",
@@ -458,9 +525,20 @@ public class ShowServiceImpl
                 deletedShowId
         );
 
+
+        /*
+         * Delete.
+         */
         showRepository.delete(
                 show
         );
+
+
+        /*
+         * We intentionally do NOT create a notification
+         * after deletion because the creator may no longer
+         * need a workflow notification for a deleted show.
+         */
     }
 
 
@@ -482,8 +560,10 @@ public class ShowServiceImpl
             );
         }
 
+
         String normalized =
                 title.trim();
+
 
         if (
                 normalized.length() < 2 ||
@@ -494,6 +574,7 @@ public class ShowServiceImpl
                     "Show title must be between 2 and 200 characters."
             );
         }
+
 
         if (
                 !normalized.matches(
@@ -522,6 +603,7 @@ public class ShowServiceImpl
             );
         }
 
+
         List<Long> normalized =
                 genreIds.stream()
                         .filter(
@@ -532,6 +614,7 @@ public class ShowServiceImpl
                         .distinct()
                         .toList();
 
+
         if (
                 normalized.isEmpty()
         ) {
@@ -540,6 +623,7 @@ public class ShowServiceImpl
                     "At least one valid genre is required."
             );
         }
+
 
         return normalized;
     }

@@ -2,22 +2,55 @@ package com.streamforge.service;
 
 import com.streamforge.dto.response.NotificationResponse;
 import com.streamforge.enums.NotificationType;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 public interface NotificationService {
 
-    List<NotificationResponse> getUserNotifications(Long userId);
+    // =========================================================
+    // USER NOTIFICATIONS
+    // =========================================================
 
-    NotificationResponse markAsRead(Long notificationId);
+    List<NotificationResponse> getUserNotifications(
+            Long userId,
+            Authentication authentication
+    );
 
-    void deleteNotification(Long notificationId);
 
-    /*
-     * Internal notification creation.
-     * This is used by other backend modules such as
-     * Show, Evaluation, Production and Reports.
-     */
+    // =========================================================
+    // MARK AS READ
+    // =========================================================
+
+    NotificationResponse markAsRead(
+            Long notificationId,
+            Authentication authentication
+    );
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    void deleteNotification(
+            Long notificationId
+    );
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+    //
+    // Internal method used by other modules:
+    //
+    // Show
+    // Evaluation
+    // Production
+    // Reports
+    // AI
+    // etc.
+    // =========================================================
+
     NotificationResponse createNotification(
             Long userId,
             String title,
